@@ -1,4 +1,4 @@
-package com.example.letterpet.presentation.user
+package com.example.letterpet.presentation.auth
 
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -11,9 +11,9 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class UserViewModel @Inject constructor(): ViewModel() {
+class AuthViewModel @Inject constructor(): ViewModel() {
 
-    private val _usernameText = mutableStateOf("")
+    private val _usernameText = mutableStateOf("Test")
     val usernameText: State<String> = _usernameText
 
     private val _onJoinChat = MutableSharedFlow<String>()

@@ -1,4 +1,4 @@
-package com.example.letterpet.presentation.user
+package com.example.letterpet.presentation.auth
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,13 +20,13 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
-fun UserScreen(
-    viewModel: UserViewModel = hiltViewModel(),
+fun AuthScreen(
+    viewModel: AuthViewModel = hiltViewModel(),
     onNavigate: (String) -> Unit
 ) {
     LaunchedEffect(key1 = true) {
         viewModel.onJoinChat.collectLatest { username ->
-            onNavigate("chat_screen/$username")
+            onNavigate("main_screen/$username")
         }
     }
 

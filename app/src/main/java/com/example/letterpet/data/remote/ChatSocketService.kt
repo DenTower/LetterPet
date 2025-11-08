@@ -1,26 +1,35 @@
 package com.example.letterpet.data.remote
 
-import com.example.letterpet.domain.model.Message
+import com.example.letterpet.data.remote.dto.ServerEvent
 import com.example.letterpet.util.Resource
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharedFlow
 
 interface ChatSocketService {
+
+    val connectionEvents: SharedFlow<ConnectionEvent>
 
     suspend fun initSession(
         username: String
     ): Resource<Unit>
 
-    suspend fun sendMessages(message: String)
+    suspend fun sendMessages(text: String, chatId: String)
 
-    fun observeMessages(): Flow<Message>
+    fun observeEvents(): Flow<ServerEvent>
 
     suspend fun closeSession()
 
     companion object {
-        const val BASE_URL = "ws://85.192.25.171:8080"
+        const val BASE_URL = "ws://192.168.0.101:8080"
     }
 
     sealed class Endpoints(val url: String) {
         object ChatSocket: Endpoints("$BASE_URL/chat-socket")
+    }
+
+    sealed class ConnectionEvent {
+        object NotEstablished : ConnectionEvent()
+        object ClosedNormally : ConnectionEvent()
+        data class Disconnected(val error: Throwable?) : ConnectionEvent()
     }
 }

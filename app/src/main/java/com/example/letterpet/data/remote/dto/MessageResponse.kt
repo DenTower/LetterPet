@@ -2,25 +2,23 @@ package com.example.letterpet.data.remote.dto
 
 import com.example.letterpet.domain.model.Message
 import kotlinx.serialization.Serializable
-import java.text.DateFormat
 import java.util.Date
 
 @Serializable
-data class MessageDto(
+data class MessageResponse(
     val text: String,
     val timestamp: Long,
     val username: String,
-    val id: String
+    val id: String,
+    val chatId: String
 ) {
     fun toMessage(): Message {
         val date = Date(timestamp)
-        val formattedDate = DateFormat
-            .getDateInstance(DateFormat.DEFAULT)
-            .format(date)
         return Message(
             text = text,
-            formattedTime = formattedDate,
-            username = username
+            date = date,
+            username = username,
+            chatId = chatId
         )
     }
 }
