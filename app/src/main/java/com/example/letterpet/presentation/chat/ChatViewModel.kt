@@ -46,31 +46,6 @@ class ChatViewModel @Inject constructor(
         observeConnection()
     }
 
-    private fun connectToChat() {
-        if(!state.value.isConnected) {
-            savedStateHandle.get<String>("username")?.let { username ->
-                loadInitialData(username)
-                initChatSocketSession(username)
-            }
-        }
-    }
-
-    private fun observeConnection() {
-        viewModelScope.launch {
-            chatSocketService.connectionEvents.collect { event ->
-                _state.value = state.value.copy(isConnected = false)
-                when (event) {
-                    is ChatSocketService.ConnectionEvent.Disconnected, ChatSocketService.ConnectionEvent.NotEstablished -> {
-                        delay(2000)
-                        Log.d("MyLog", "Reconnecting...")
-                        connectToChat()
-                    }
-                    else -> {}
-                }
-            }
-        }
-    }
-
     fun onMessageChange(message: String) {
         _messageText.value = message
     }
@@ -107,13 +82,47 @@ class ChatViewModel @Inject constructor(
 
                 when (result) {
                     is Resource.Success -> {
-                        pushChatToState(result.data!!)
+                        _state.value = state.value.copy(chats = state.value.chats + result.data!!)
                     }
 
                     is Resource.Error -> {
                         emitError(result.message ?: "Unknown error")
                     }
                 }
+            }
+        }
+    }
+
+    fun deleteChat(chatId: String) {
+        viewModelScope.launch {
+            val result = messageService.deleteChat(chatId)
+
+            when (result) {
+                is Resource.Success -> {
+                    val newList = state.value.chats.toMutableList().apply {
+                        removeIf { it.id == chatId }
+                    }
+                    _state.value = state.value.copy(chats = newList)
+                }
+
+                is Resource.Error -> {
+                    emitError(result.message ?: "Unknown error")
+                }
+
+            }
+        }
+    }
+
+    fun getChatMembers(chatId: String) {
+        viewModelScope.launch {
+            if(!state.value.membersOfChats.containsKey(chatId)) {
+                val chatMembers = messageService.getChatMembers(chatId)
+
+                val newMap = state.value.membersOfChats.toMutableMap().apply {
+                    put(chatId, chatMembers)
+                }
+
+                _state.value = state.value.copy(membersOfChats = newMap)
             }
         }
     }
@@ -127,7 +136,15 @@ class ChatViewModel @Inject constructor(
 
             when (result) {
                 is Resource.Success -> {
-                    // TODO connect chat and member on client
+                    val currentList = state.value.membersOfChats.getOrDefault(chatId, emptyList())
+                    val newList = currentList.toMutableList().apply {
+                        add(username)
+                    }
+                    val newMap = state.value.membersOfChats.toMutableMap().apply {
+                        put(chatId, newList)
+                    }
+
+                    _state.value = state.value.copy(membersOfChats = newMap)
                 }
 
                 is Resource.Error -> {
@@ -138,9 +155,48 @@ class ChatViewModel @Inject constructor(
 
     }
 
-    fun onChatSelected(chatId: String) {
+    fun removeMemberFromChat(usernameForRemoving: String, chatId: String) {
+        savedStateHandle.get<String>("username")?.let { username ->
+            viewModelScope.launch {
+                val result = messageService.removeMemberFromChat(
+                    username = usernameForRemoving,
+                    chatId = chatId
+                )
+
+                when (result) {
+                    is Resource.Success -> {
+
+                        if(usernameForRemoving == username) {
+                            val newList = state.value.chats.toMutableList().apply {
+                                removeIf { it.id == chatId }
+                            }
+                            _state.value = state.value.copy(chats = newList)
+                        }
+                        val currentList =
+                            state.value.membersOfChats.getOrDefault(chatId, emptyList())
+                        val newList = currentList.toMutableList().apply {
+                            remove(usernameForRemoving)
+                        }
+                        val newMap = state.value.membersOfChats.toMutableMap().apply {
+                            put(chatId, newList)
+                        }
+
+                        _state.value = state.value.copy(membersOfChats = newMap)
+                    }
+
+                    is Resource.Error -> {
+                        emitError(result.message ?: "Unknown error")
+                    }
+                }
+            }
+        }
+    }
+
+
+    fun onChatSelected(chat: Chat) {
         viewModelScope.launch {
-            _onOpenChat.emit(chatId)
+            _state.value = state.value.copy(selectedChat = chat)
+            _onOpenChat.emit(chat.id)
         }
     }
 
@@ -149,28 +205,43 @@ class ChatViewModel @Inject constructor(
         disconnectFromChat()
     }
 
-    private fun loadInitialData(username: String) {
-        getAllChats(username)
-        getAllMessages(username)
-    }
-
-    private fun getAllChats(username: String) {
-        viewModelScope.launch {
-            _state.value = state.value.copy(isLoading = true)
-            val result = messageService.getAllChatsForUser(username)
-            _state.value = state.value.copy(
-                chats = result,
-                isLoading = false
-            )
+    private fun connectToChat() {
+        if(!state.value.isConnected) {
+            savedStateHandle.get<String>("username")?.let { username ->
+                loadInitialData(username)
+                initChatSocketSession(username)
+            }
         }
     }
 
-    private fun getAllMessages(username: String) {
+    private fun observeConnection() {
+        viewModelScope.launch {
+            chatSocketService.connectionEvents.collect { event ->
+                _state.value = state.value.copy(isConnected = false)
+                when (event) {
+                    is ChatSocketService.ConnectionEvent.Disconnected,
+                    ChatSocketService.ConnectionEvent.NotEstablished -> {
+                        delay(2000)
+                        Log.d("MyLog", "Reconnecting...")
+                        connectToChat()
+                        emitError("No connection. Reconnecting...")
+                    }
+
+                    else -> {}
+                }
+            }
+        }
+    }
+
+    private fun loadInitialData(username: String) {
         viewModelScope.launch {
             _state.value = state.value.copy(isLoading = true)
-            val result = messageService.getAllMessages(username)
+            val chats = messageService.getAllChatsForUser(username)
+            val messages = messageService.getAllMessages(username)
+
             _state.value = state.value.copy(
-                messages = result,
+                messages = messages,
+                chats = chats,
                 isLoading = false
             )
         }
@@ -195,7 +266,7 @@ class ChatViewModel @Inject constructor(
                 }
 
                 is Resource.Error -> {
-                    emitError(result.message)
+
                 }
             }
         }
@@ -211,16 +282,19 @@ class ChatViewModel @Inject constructor(
             }
 
             is ServerEvent.NewChat -> {
-                pushChatToState(event.chat.toChat())
+                val newList = state.value.chats.toMutableList().apply {
+                    add(event.chat.toChat())
+                }
+                _state.value = state.value.copy(chats = newList)
+            }
+
+            is ServerEvent.DeleteChat -> {
+                val newList = state.value.chats.toMutableList().apply {
+                    removeIf { it.id == event.chatId }
+                }
+                _state.value = state.value.copy(chats = newList)
             }
         }
-    }
-
-    private fun pushChatToState(chat: Chat) {
-        val newList = state.value.chats.toMutableList().apply {
-            add(chat)
-        }
-        _state.value = state.value.copy(chats = newList)
     }
 
     private suspend fun emitError(message: String?) {

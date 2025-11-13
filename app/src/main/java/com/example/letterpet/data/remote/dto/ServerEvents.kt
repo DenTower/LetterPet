@@ -11,4 +11,9 @@ sealed class ServerEvent {
     @Serializable
     @SerialName("NewChat")
     data class NewChat(val chat: ChatResponse) : ServerEvent()
+
+    @Serializable
+    @SerialName("DeleteChat")
+    data class DeleteChat(val chatId: String) : ServerEvent()
+
 }

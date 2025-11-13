@@ -64,18 +64,19 @@ class MessageServiceImpl(
         }
     }
 
-    override suspend fun deleteChat(chatId: String) {
-        try {
+    override suspend fun deleteChat(chatId: String): Resource<Unit> {
+        return try {
             val url = MessageService.Endpoints.DeleteChat.url
                 .replace("{chatId}", chatId)
 
             client.delete(url)
+            Resource.Success(Unit)
         } catch (e: Exception) {
-            println("Error deleting chat: ${e.message}")
+            Resource.Error("Error deleting chat: ${e.message}")
         }
     }
 
-    override suspend fun getAllChatMembers(chatId: String): List<String> {
+    override suspend fun getChatMembers(chatId: String): List<String> {
         return try {
             val url = MessageService.Endpoints.GetAllChatMembers.url
                 .replace("{chatId}", chatId)
@@ -105,17 +106,21 @@ class MessageServiceImpl(
         }
     }
 
-    override suspend fun removeMemberFromChat(username: String, chatId: String): Boolean {
+    override suspend fun removeMemberFromChat(username: String, chatId: String): Resource<Unit> {
         return try {
             val url = MessageService.Endpoints.RemoveMemberFromChat.url
                 .replace("{username}", username)
                 .replace("{chatId}", chatId)
 
             val response = client.delete(url)
-            response.status == HttpStatusCode.OK
+            if(response.status == HttpStatusCode.OK) {
+                return Resource.Success(Unit)
+            } else {
+                return Resource.Error(response.status.description)
+            }
         } catch (e: Exception) {
-            println("Error removing member: ${e.message}")
-            false
+            e.printStackTrace()
+            Resource.Error("Error removing member: ${e.message}")
         }
     }
 }

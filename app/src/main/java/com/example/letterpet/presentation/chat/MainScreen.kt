@@ -2,7 +2,10 @@ package com.example.letterpet.presentation.chat
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -28,8 +31,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.example.letterpet.domain.model.Chat
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,13 +60,13 @@ fun MainScreen(
     var showDialog by remember { mutableStateOf(false) }
     var chatNameToCreate by remember { mutableStateOf("") }
 
-    if (showDialog) {
+    if(showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.createChat(
-                        isGroup = false, // или true — можешь сделать выбор позже
+                        isGroup = true,
                         chatName = chatNameToCreate
                     )
                     showDialog = false
@@ -115,8 +120,59 @@ fun MainScreen(
         ) {
             items(state.chats) { chat ->
                 ChatItem(chat = chat, onClick = {
-                    viewModel.onChatSelected(chat.id)
+                    viewModel.onChatSelected(chat)
                 })
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 72.dp),
+                    thickness = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
+                )
+            }
+        }
+    }
+}
+
+@Preview("sd")
+@Composable
+fun Playground() {
+    Scaffold(
+        topBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(14.dp)
+            ) {
+                Text("Chats", style = MaterialTheme.typography.titleLarge)
+            }
+
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add Chat"
+                )
+            }
+        }
+    ) { paddingValues ->
+        Column(
+            Modifier.padding(paddingValues)
+        ) {
+            repeat(10) { i ->
+                ChatItem(
+                    Chat(
+                        "$i",
+                        name = "Chat № $i",
+                        isGroup = false,
+                        createdBy = "",
+                        lastMessageId = "$i",
+                    )
+                ) {}
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 72.dp),
                     thickness = 0.5.dp,

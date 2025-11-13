@@ -69,7 +69,6 @@ class MainActivity: ComponentActivity() {
                                 navArgument(name = "chatId") { type = NavType.StringType }
                             )
                         ) { backStackEntry ->
-                            val chatId = backStackEntry.arguments?.getString("chatId")!!
                             val username = backStackEntry.arguments?.getString("username")
 
                             val parentEntry = remember(backStackEntry) {
@@ -78,9 +77,9 @@ class MainActivity: ComponentActivity() {
                             val viewModel: ChatViewModel = hiltViewModel(parentEntry)
 
                             ChatScreen(
-                                chatId = chatId,
                                 username = username,
-                                viewModel = viewModel
+                                viewModel = viewModel,
+                                onPopBackNavigation = navController::popBackStack
                             )
                         }
                     }

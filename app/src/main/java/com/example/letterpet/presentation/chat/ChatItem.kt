@@ -35,7 +35,6 @@ fun ChatItem(chat: Chat, onClick: () -> Unit) {
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Аватар
         Box(
             modifier = Modifier
                 .size(48.dp)
@@ -57,7 +56,6 @@ fun ChatItem(chat: Chat, onClick: () -> Unit) {
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        // Имя и подпись
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = chat.name,
@@ -71,7 +69,6 @@ fun ChatItem(chat: Chat, onClick: () -> Unit) {
             )
         }
 
-        // Стрелка/иконка перехода
         Icon(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,

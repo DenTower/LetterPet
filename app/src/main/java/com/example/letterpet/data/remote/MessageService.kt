@@ -10,13 +10,14 @@ interface MessageService {
     suspend fun getAllMessages(username: String): List<Message>
     suspend fun getAllChatsForUser(username: String): List<Chat>
     suspend fun createChat(chatRequest: ChatRequest): Resource<Chat>
-    suspend fun deleteChat(chatId: String) // TODO use in viewModel
-    suspend fun getAllChatMembers(chatId: String): List<String> // TODO use in viewModel
+    suspend fun deleteChat(chatId: String): Resource<Unit>
+    suspend fun getChatMembers(chatId: String): List<String>
     suspend fun addMemberToChat(username: String, chatId: String): Resource<Unit>
-    suspend fun removeMemberFromChat(username: String, chatId: String): Boolean // TODO use in viewModel
+    suspend fun removeMemberFromChat(username: String, chatId: String): Resource<Unit>
 
     companion object {
-        const val BASE_URL = "http://192.168.0.101:8080"
+//        const val BASE_URL = "http://10.0.2.2:8080"
+        const val BASE_URL = "http://192.168.0.100:8080"
     }
 
     sealed class Endpoints(val url: String) {
